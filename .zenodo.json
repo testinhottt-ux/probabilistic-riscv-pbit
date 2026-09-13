@@ -1,0 +1,40 @@
+{
+  "metadata": {
+    "title": "A Thermodynamically-Grounded Sub-Threshold p-Bit Coprocessor for RISC-V: Physical FPGA Realization, Stochastic Universality, and Industrial Energy Benchmarks",
+    "upload_type": "publication",
+    "publication_type": "preprint",
+    "description": "As classical microelectronics scaling approaches the Boltzmann thermodynamic limit (~60 mV/decade at 300 K), thermodynamic and probabilistic computing offer a transformative alternative for non-deterministic workloads. This dataset and preprint package introduces the design, mathematical formalization, Verilog RTL implementation, and physical silicon proof of a 32-bit RISC-V (RV32I) core coupled with a thermodynamic Probabilistic Processing Unit (PPU) and Native Hybrid ALU. Built upon coupled p-bits governed by the continuous Langevin equation and an RTL Piecewise Linear (PWL) Boltzmann activation engine, this work overcomes the fundamental non-linear separability of stochastic logic gates using an autonomous hidden-unit topology (H = A AND B). Implemented and verified on physical Gowin GW1NR-9C FPGA hardware (Sipeed Tang Nano 9K) at 27 MHz (Fmax = 87.84 MHz), the core demonstrates full compliance on the NIST SP 800-22 cryptographic entropy suite (Runs Test P-value = 0.28902), exact Ising Hamiltonian ground-state convergence, and 100% deterministic decision accuracy under 500-cycle continuous pipeline stress (BER = 0.00e+00). At the Swanson-Meindl sub-threshold limit (70 mV), dynamic power dissipation is reduced by 99.51% (204.1x per cycle), delivering task-level energy savings of up to 25,510x in inverse integer factorization and 16,326x in combinatorial optimization over conventional 1.0 V RISC-V processors. Includes complete IEEE-format manuscript, vector benchmark figures, and an open-access educational Verilog RTL package distributed under the Thermodynamic Hardware Fair-Source License (TH-FL-1.0).",
+    "creators": [
+      {
+        "name": "Antigravity Autonomous Laboratory",
+        "affiliation": "Advanced Agentic Coding & Thermodynamic Computing Research"
+      },
+      {
+        "name": "Open Source Community & Collaborators",
+        "affiliation": "RISC-V Probabilistic Hardware Initiative"
+      }
+    ],
+    "access_right": "open",
+    "license": "other-open",
+    "keywords": [
+      "probabilistic computing",
+      "p-bit",
+      "RISC-V",
+      "FPGA",
+      "Tang Nano 9K",
+      "Gowin GW1NR-9C",
+      "thermodynamic computing",
+      "Ising model",
+      "NIST SP 800-22",
+      "sub-threshold",
+      "hardware security",
+      "energy-efficient computing"
+    ],
+    "communities": [
+      {
+        "identifier": "zenodo"
+      }
+    ],
+    "notes": "Code and physical bitstreams verified on Sipeed Tang Nano 9K (Gowin GW1NR-9C). Educational RTL simulation compatible with Icarus Verilog, Verilator, and Yosys. Licensed under Thermodynamic Hardware Fair-Source License v1.0 (Royalty-free under $1M gross revenue)."
+  }
+}

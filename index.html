@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Computador Probabilístico RISC-V & p-Bits — Tang Nano 9K</title>
+  <style>
+    :root {
+      --bg-base: #04070d;
+      --bg-surface: #0a101d;
+      --bg-card: #0f182b;
+      --bg-card-hover: #15223c;
+      --border: #1e2f4d;
+      --border-bright: #3b5785;
+      
+      --cyan: #00f0ff;
+      --cyan-glow: rgba(0, 240, 255, 0.35);
+      --magenta: #ff007f;
+      --magenta-glow: rgba(255, 0, 127, 0.35);
+      --amber: #ffd000;
+      --amber-glow: rgba(255, 208, 0, 0.35);
+      --green: #00ff88;
+      --green-glow: rgba(0, 255, 136, 0.35);
+      --purple: #c084fc;
+      
+      --text-main: #f8fafc;
+      --text-muted: #cbd5e1;
+      --text-dim: #94a3b8;
+      
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      line-height: 1.5;
+      background-image: 
+        radial-gradient(circle at 10% 5%, rgba(0, 240, 255, 0.06) 0%, transparent 50%),
+        radial-gradient(circle at 90% 95%, rgba(255, 0, 127, 0.06) 0%, transparent 50%),
+        linear-gradient(to bottom, #04070d 0%, #080d1a 100%);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 4rem;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .badge-bar {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .badge-cyan { background: rgba(0, 240, 255, 0.12); border: 1px solid rgba(0, 240, 255, 0.4); color: var(--cyan); }
+    .badge-green { background: rgba(0, 255, 136, 0.12); border: 1px solid rgba(0, 255, 136, 0.4); color: var(--green); }
+    .badge-amber { background: rgba(255, 208, 0, 0.12); border: 1px solid rgba(255, 208, 0, 0.4); color: var(--amber); }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff 30%, var(--cyan) 75%, var(--magenta) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.6rem;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 900px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Navigation Tabs */
+    .tab-nav {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin: 1.5rem 0 2rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab-nav::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.6rem 1.25rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .tab-btn:hover {
+      color: #fff;
+      border-color: var(--border-bright);
+    }
+    .tab-btn.active {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: var(--cyan);
+      color: var(--cyan);
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+
+    /* Cards & Layout */
+    .section-content { display: none; }
+    .section-content.active { display: block; animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem;
+      position: relative;
+    }
+    .card-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--cyan);
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Controls */
+    .control-group { margin-bottom: 1.25rem; }
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 0.4rem;
+    }
+    .control-header label { color: var(--text-muted); font-weight: 600; }
+    .control-header .val { font-family: var(--font-mono); font-weight: 700; color: #fff; }
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--border-bright);
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan-glow);
+      cursor: pointer;
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+    .metric-box {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border);
+      padding: 0.8rem;
+      border-radius: 8px;
+    }
+    .metric-label { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .metric-val { font-family: var(--font-mono); font-size: 1.2rem; font-weight: 800; margin-top: 0.2rem; color: #fff; }
+
+    /* Canvases */
+    canvas {
+      width: 100%;
+      height: 200px;
+      background: #02050a;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      display: block;
+    }
+
+    /* State Pills */
+    .state-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0.8rem;
+      background: rgba(0,0,0,0.4);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin: 1rem 0;
+    }
+    .state-pill {
+      font-family: var(--font-mono);
+      font-size: 1.6rem;
+      font-weight: 800;
+      padding: 0.4rem 1.4rem;
+      border-radius: 8px;
+      transition: all 0.08s ease;
+      min-width: 80px;
+      text-align: center;
+    }
+    .state-zero { border: 2px solid var(--magenta); color: var(--magenta); background: rgba(255, 0, 127, 0.08); }
+    .state-zero.active { background: var(--magenta); color: #fff; box-shadow: 0 0 20px var(--magenta-glow); }
+    .state-one { border: 2px solid var(--cyan); color: var(--cyan); background: rgba(0, 240, 255, 0.08); }
+    .state-one.active { background: var(--cyan); color: #000; box-shadow: 0 0 20px var(--cyan-glow); }
+
+    .stream-box {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      letter-spacing: 0.14em;
+      padding: 0.65rem;
+      background: #02050a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow-x: auto;
+      white-space: nowrap;
+      color: var(--text-muted);
+    }
+    .stream-box span.c1 { color: var(--cyan); font-weight: 800; }
+    .stream-box span.c0 { color: var(--magenta); font-weight: 800; }
+
+    /* Logic Gate Interactive Section */
+    .gate-selector-bar {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+    }
+    .gate-btn {
+      padding: 0.5rem 0.9rem;
+      border-radius: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .gate-btn:hover { color: #fff; border-color: var(--border-bright); }
+    .gate-btn.active {
+      background: rgba(0, 240, 255, 0.18);
+      border-color: var(--cyan);
+      color: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    .truth-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      margin-top: 1rem;
+    }
+    .truth-table th, .truth-table td {
+      padding: 0.5rem 0.6rem;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    .truth-table th { background: rgba(0,0,0,0.5); color: var(--text-dim); }
+    .truth-table tr.active-row { background: rgba(0, 240, 255, 0.15); border: 1px solid var(--cyan); font-weight: 700; }
+
+    /* CPU Pipeline Visualization */
+    .pipeline-diagram {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+    .pipeline-stage {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .stage-title { font-size: 0.72rem; color: var(--cyan); font-family: var(--font-mono); text-transform: uppercase; font-weight: 700; margin-bottom: 0.4rem; }
+    .stage-content { font-size: 0.88rem; font-weight: 700; }
+    .stage-sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.3rem; }
+
+    /* Hardware Console & LEDs */
+    .led-rack {
+      display: flex;
+      justify-content: space-around;
+      padding: 1rem;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 1.25rem;
+    }
+    .led-unit { text-align: center; }
+    .led-bulb {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #1e293b;
+      margin: 0 auto 0.4rem;
+      border: 2px solid #334155;
+      transition: all 0.1s ease;
+    }
+    .led-bulb.on-green { background: #00ff88; box-shadow: 0 0 15px var(--green-glow); border-color: #a7f3d0; }
+    .led-bulb.on-cyan { background: #00f0ff; box-shadow: 0 0 15px var(--cyan-glow); border-color: #a5f3fc; }
+    .led-bulb.on-amber { background: #ffd000; box-shadow: 0 0 15px var(--amber-glow); border-color: #fef08a; }
+    .led-label { font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted); line-height: 1.3; }
+
+    .terminal-box {
+      background: #010307;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--green);
+      height: 260px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+    .action-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-bright);
+      color: var(--text-main);
+      padding: 0.55rem 1rem;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+    }
+    .action-btn:hover { background: var(--border-bright); color: #fff; }
+    .action-btn.primary { background: rgba(0, 240, 255, 0.15); border-color: var(--cyan); color: var(--cyan); }
+
+    .math-card {
+      background: rgba(0,0,0,0.4);
+      border-left: 3px solid var(--cyan);
+      padding: 0.85rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin: 0.75rem 0;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 960px) {
+      .grid-2col { grid-template-columns: 1fr; }
+      .pipeline-diagram { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      h1 { font-size: 1.5rem; }
+      .container { padding: 1rem 0.5rem 2rem; }
+      .pipeline-diagram { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr; }
+      .tab-btn { font-size: 0.78rem; padding: 0.5rem 0.9rem; }
+    }
+  
+    .asm-line { padding: 0.15rem 0.5rem; border-radius: 4px; transition: all 0.2s ease; }
+    .asm-line.active-line { background: rgba(0, 240, 255, 0.2); color: var(--cyan); font-weight: bold; border-left: 3px solid var(--cyan); }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge-bar">
+        <span class="badge badge-cyan">● Computador Termodinâmico</span>
+        <span class="badge badge-green">✔ RISC-V RV32I Open-Source</span>
+        <span class="badge badge-amber">⚡ Tang Nano 9K GW1NR-9C via USB</span>
+      </div>
+      <h1>Computador Probabilístico RISC-V & p-Bits</h1>
+      <p class="subtitle">
+        Arquitetura híbrida de computação estocástica e lógica termodinâmica. Operando em regime sub-limiar (<i>V</i><sub>core</sub> &approx; 70 mV), o ruído Johnson-Nyquist é aproveitado por p-bits acoplados para implementar portas lógicas universais (AND, NOR, XOR), coprocessamento probabilístico e amostragem de Boltzmann com redução drástica de energia.
+      </p>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('tab-physics')">1. Física do p-Bit & Vcore</button>
+      <button class="tab-btn" onclick="switchTab('tab-logic')">2. Portas Lógicas (AND, NOR, XOR)</button>
+      <button class="tab-btn" onclick="switchTab('tab-riscv')">3. Arquitetura RISC-V + PPU</button>
+      <button class="tab-btn" onclick="switchTab('tab-hardware')">4. Bancada Tang Nano 9K (USB/UART)</button>
+    </div>
+
+    <!-- TAB 1: FÍSICA DO P-BIT -->
+    <div id="tab-physics" class="section-content active">
+      <div class="grid-2col">
+        <!-- Controles -->
+        <div class="card">
+          <div class="card-title">
+            <span>Parâmetros Termodinâmicos</span>
+            <span style="font-size: 0.72rem; color: var(--green);">● EM TEMPO REAL</span>
+          </div>
+
+          <div class="control-group">
+            <div class="control-header">
+              <label>Tensão de Núcleo (Vcore)</label>
+              <span class="val" id="vcoreVal">0.070 V (70 mV)</span>
+            </div>
+            <input type="range" id="vcoreSlider" min="0.03" max="1.0" step="0.005" value="0.07">
+          </div>
+
+          <div class="control-group">
+            <div class="control-header">
+              <label>Campo de Entrada / Bias (I_in)</label>
+              <span class="val" id="biasVal">0.00</span>
+            </div>
+            <input type="range" id="biasSlider" min="-2.0" max="2.0" step="0.05" value="0.0">
+          </div>
+
+          <div class="control-group">
+            <div class="control-header">
+              <label>Temperatura (T)</label>
+              <span class="val" id="tempVal">300 K (27 °C)</span>
+            </div>
+            <input type="range" id="tempSlider" min="77" max="400" step="1" value="300">
+          </div>
+
+          <!-- Métricas Físicas -->
+          <div class="metrics-grid">
+            <div class="metric-box">
+              <div class="metric-label">Barreira &Delta;U / k<sub>B</sub>T</div>
+              <div class="metric-val" id="metricBarrier">1.83</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">Economia de Energia</div>
+              <div class="metric-val" id="metricPower" style="color: var(--green);">99.5%</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">Probabilidade P(1)</div>
+              <div class="metric-val" id="metricP1" style="color: var(--cyan);">50.0%</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">Entropia Shannon</div>
+              <div class="metric-val" id="metricEntropy">1.000 bit</div>
+            </div>
+          </div>
+
+          <!-- Estado Instantâneo -->
+          <div class="state-indicator">
+            <div class="state-pill state-zero" id="pillZero">0</div>
+            <div style="color: var(--text-dim); font-size: 0.8rem; font-family: var(--font-mono);">ESTADO</div>
+            <div class="state-pill state-one active" id="pillOne">1</div>
+          </div>
+
+          <div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); margin-bottom: 0.3rem;">
+              Stream Estocástico Instantâneo:
+            </div>
+            <div class="stream-box" id="bitStream">101001101010111001</div>
+          </div>
+        </div>
+
+        <!-- Gráficos Físicos -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <div class="card">
+            <div class="card-title">
+              <span>1. Poço Duplo de Potencial U(V) & Salto Térmico</span>
+              <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">LANGEVIN</span>
+            </div>
+            <canvas id="potentialCanvas" width="800" height="200"></canvas>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span>2. Osciloscópio de Ruído Térmico Johnson-Nyquist V(t)</span>
+              <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">DIFUSÃO BROWNIANA</span>
+            </div>
+            <canvas id="scopeCanvas" width="800" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: PORTAS LÓGICAS ESTOCÁSTICAS -->
+    <div id="tab-logic" class="section-content">
+      <div class="grid-2col">
+        <!-- Seletor de Portas & Operandos -->
+        <div class="card">
+          <div class="card-title">Porta Lógica Estocástica</div>
+          
+          <div class="gate-selector-bar">
+            <button class="gate-btn active" onclick="selectGate('AND')">AND</button>
+            <button class="gate-btn" onclick="selectGate('OR')">OR</button>
+            <button class="gate-btn" onclick="selectGate('NOR')">NOR</button>
+            <button class="gate-btn" onclick="selectGate('NAND')">NAND</button>
+            <button class="gate-btn" onclick="selectGate('XOR')">XOR (Hidden Unit)</button>
+            <button class="gate-btn" onclick="selectGate('XNOR')">XNOR</button>
+          </div>
+
+          <div style="margin-bottom: 1.25rem;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; font-family: var(--font-mono);">
+              SELECIONE AS ENTRADAS BINÁRIAS:
+            </div>
+            <div style="display: flex; gap: 1rem;">
+              <button id="btnInA" class="action-btn" onclick="toggleInput('A')">Entrada A = 0</button>
+              <button id="btnInB" class="action-btn" onclick="toggleInput('B')">Entrada B = 0</button>
+            </div>
+          </div>
+
+          <div class="math-card" id="gateFormula">
+            I_C = -3.0 + 2.0*A + 2.0*B<br>
+            P(C = 1) = 1 / (1 + exp(-beta * I_C))
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-box">
+              <div class="metric-label">Campo Local I_C</div>
+              <div class="metric-val" id="gateFieldVal">-3.00</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">P(C = 1) Teórico</div>
+              <div class="metric-val" id="gateP1Val" style="color: var(--cyan);">4.7%</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">Bit Saída (Majority)</div>
+              <div class="metric-val" id="gateOutBit" style="color: var(--magenta);">0</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">Amostras FPGA</div>
+              <div class="metric-val" id="gateSampleCount">256 / 256</div>
+            </div>
+          </div>
+
+          <!-- Tabela Verdade Dinâmica -->
+          <table class="truth-table">
+            <thead>
+              <tr>
+                <th>A</th>
+                <th>B</th>
+                <th>Campo I</th>
+                <th>P(1)</th>
+                <th>Saída</th>
+                <th>Tang Nano 9K Hardware</th>
+              </tr>
+            </thead>
+            <tbody id="truthTableBody">
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Topologia Sináptica -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <div class="card">
+            <div class="card-title">
+              <span>Topologia da Célula de Porta Lógica p-Bit</span>
+              <span style="font-size: 0.72rem; color: var(--cyan); font-family: var(--font-mono);">ISING / BOLTZMANN</span>
+            </div>
+            <canvas id="gateTopologyCanvas" width="800" height="230"></canvas>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span>Histograma de Amostragem Estocástica (256 Ciclos)</span>
+              <span style="font-size: 0.72rem; color: var(--green); font-family: var(--font-mono);">MONTE CARLO FPGA</span>
+            </div>
+            <canvas id="histCanvas" width="800" height="190"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: ARQUITETURA RISC-V -->
+    <div id="tab-riscv" class="section-content">
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-title">Pipeline do Processador RISC-V com Coprocessador Probabilístico (PPU)</div>
+        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1rem;">
+          O núcleo RISC-V RV32I padrão fornece controle de fluxo determinístico, decodificação de instruções e acesso à memória, enquanto a PPU integrada resolve portas lógicas termodinâmicas, amostragem de Gibbs física e annealing estocástico com consumo inferior a 1 mW.
+        </p>
+
+        <div class="pipeline-diagram">
+          <div class="pipeline-stage">
+            <div class="stage-title">1. Fetch (IF)</div>
+            <div class="stage-content">Program Counter</div>
+            <div class="stage-sub">Memória ROM / RAM</div>
+          </div>
+          <div class="pipeline-stage">
+            <div class="stage-title">2. Decode (ID)</div>
+            <div class="stage-content">RV32I + PPU Opcodes</div>
+            <div class="stage-sub">Banco Regs x0-x31</div>
+          </div>
+          <div class="pipeline-stage" style="border-color: var(--cyan); background: rgba(0, 240, 255, 0.08);">
+            <div class="stage-title" style="color: var(--cyan);">3. Execute (EX)</div>
+            <div class="stage-content">ALU + Coprocessador p-Bit</div>
+            <div class="stage-sub">Portas AND, NOR, XOR, TRNG</div>
+          </div>
+          <div class="pipeline-stage">
+            <div class="stage-title">4. Memory (MEM)</div>
+            <div class="stage-content">Barramento MMIO</div>
+            <div class="stage-sub">Periféricos & UART</div>
+          </div>
+          <div class="pipeline-stage">
+            <div class="stage-title">5. Writeback (WB)</div>
+            <div class="stage-content">Gravação em Regs</div>
+            <div class="stage-sub">Resultado Determinístico / P1</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2col">
+        <!-- Mapa de Memória MMIO e Conjunto de Instruções -->
+        <div class="card">
+          <div class="card-title">Mapeamento de Registradores PPU (MMIO)</div>
+          <div class="math-card" style="font-size: 0.78rem;">
+            0x80000000: PPU_CTRL    [Opcode: 0=AND, 1=OR, 3=NOR, 4=XOR, Start]<br>
+            0x80000004: PPU_INPUT   [Operand A (bit 0), Operand B (bit 1), Beta]<br>
+            0x80000008: PPU_RESULT  [Majority Bit (0), P1 Acc (15:8), Done]<br>
+            0x8000000C: PPU_TRNG    [Palavra aleatória térmica 32-bit]<br>
+            0x80000010: UART_DATA   [TX / RX byte]<br>
+            0x80000018: LED_OUTPUT  [Controle dos 6 LEDs da Tang Nano 9K]
+          </div>
+          
+          <div class="card-title" style="margin-top: 1.25rem;">Instruções Estocásticas Customizadas</div>
+          <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); line-height: 1.7;">
+            • <code>pbit.and rd, rs1, rs2</code>: Amostra porta AND termodinâmica<br>
+            • <code>pbit.nor rd, rs1, rs2</code>: Amostra porta NOR sub-threshold<br>
+            • <code>pbit.xor rd, rs1, rs2</code>: Amostra porta XOR com unidade oculta<br>
+            • <code>pbit.sample rd, beta</code>: Gera bit estocástico com ruído físico<br>
+            • <code>pbit.anneal rd, rs1</code>: Minimiza Hamiltoniano de Ising (Gibbs)
+          </div>
+        </div>
+
+        <!-- Eficiência Energética: Super-threshold vs Sub-threshold -->
+        <div class="card">
+          <div class="card-title">Comparação de Potência Dinâmica e Eficiência</div>
+          <canvas id="powerCanvas" width="800" height="240"></canvas>
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.8rem; line-height: 1.6;">
+            A potência dinâmica <i>P = C V</i><sup>2</sup> <i>f</i> diminui quadraticamente com a tensão. Operando a 70 mV em relação aos processadores clássicos de 1.0 V:<br>
+            <b>P<sub>70mV</sub> / P<sub>1.0V</sub> = (0.070 / 1.0)<sup>2</sup> = 0.0049 = 0.49%</b><br>
+            O processador consome <strong>menos de 0.5% da energia clássica</strong>, convertendo o ruído térmico em elemento de computação útil!
+          </div>
+
+          <!-- Tabela Quantitativa de Ensaios Industriais -->
+          <div style="margin-top: 1rem; overflow-x: auto;">
+            <div style="font-size: 0.75rem; color: var(--cyan); font-family: var(--font-mono); text-transform: uppercase; font-weight: 700; margin-bottom: 0.4rem;">
+              BALANÇO ENERGÉTICO COMPARATIVO POR TESTE INDUSTRIAL:
+            </div>
+            <table class="truth-table" style="font-size: 0.78rem;">
+              <thead>
+                <tr>
+                  <th>Ensaio Industrial</th>
+                  <th>RISC-V Clássico (1.0V)</th>
+                  <th>RISC-V p-Bit (70mV)</th>
+                  <th>Economia de Energia</th>
+                  <th>Mecanismo Físico</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="text-align: left; font-weight: bold;">1. NIST SP 800-22 (1M bits TRNG)</td>
+                  <td>18.75 &mu;J (3.75M cyc)</td>
+                  <td style="color: var(--green); font-weight: bold;">24.50 nJ (1M cyc)</td>
+                  <td style="color: var(--cyan); font-weight: bold;">765.3x menor</td>
+                  <td>Ruído Johnson-Nyquist nativo</td>
+                </tr>
+                <tr>
+                  <td style="text-align: left; font-weight: bold;">2. Otimização Ising (Max-CUT 64 nós)</td>
+                  <td>40.00 &mu;J (8M cyc)</td>
+                  <td style="color: var(--green); font-weight: bold;">2.45 nJ (100k cyc)</td>
+                  <td style="color: var(--cyan); font-weight: bold;">16.326x menor</td>
+                  <td>Gibbs Sampling físico em 1 ciclo</td>
+                </tr>
+                <tr>
+                  <td style="text-align: left; font-weight: bold;">3. Fatoração Inteira Invertível</td>
+                  <td>750.00 nJ (150k cyc)</td>
+                  <td style="color: var(--green); font-weight: bold;">0.03 nJ (1.2k cyc)</td>
+                  <td style="color: var(--cyan); font-weight: bold;">25.510x menor</td>
+                  <td>Convergência de Boltzmann reversível</td>
+                </tr>
+                <tr>
+                  <td style="text-align: left; font-weight: bold;">4. Inferência RBM (16x16 spins)</td>
+                  <td>11.25 &mu;J (2.25M cyc)</td>
+                  <td style="color: var(--green); font-weight: bold;">1.23 nJ (50k cyc)</td>
+                  <td style="color: var(--cyan); font-weight: bold;">9.183x menor</td>
+                  <td>Ativação sigmoidal estocástica</td>
+                </tr>
+                <tr>
+                  <td style="text-align: left; font-weight: bold;">5. Lógica Booleana (10k portas)</td>
+                  <td>50.00 nJ (10k cyc)</td>
+                  <td style="color: var(--text-muted);">62.72 nJ (2.56M cyc)</td>
+                  <td style="color: var(--amber);">Comparável (0.8x)</td>
+                  <td>Votação majoritária BER zero a 70mV</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+      <!-- Simulador de Execução Assembly RISC-V com PPU -->
+      <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-title">
+          <span>Simulador de Execução: Programa RISC-V RV32I com Extensão PPU</span>
+          <span style="font-size: 0.72rem; color: var(--green);">● EMULADOR DE PIPELINE</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem;">
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.4rem;">CÓDIGO ASSEMBLY RV32I + PPU:</div>
+            <div id="asmCodeBox" style="background: #010307; border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.7;">
+              <div id="asmLine0" class="asm-line active-line">1:  li x1, 1              # Entrada A = 1</div>
+              <div id="asmLine1" class="asm-line">2:  li x2, 1              # Entrada B = 1</div>
+              <div id="asmLine2" class="asm-line">3:  pbit.and x3, x1, x2   # Porta AND termodinâmica</div>
+              <div id="asmLine3" class="asm-line">4:  pbit.nor x4, x1, x2   # Porta NOR estocástica</div>
+              <div id="asmLine4" class="asm-line">5:  pbit.xor x5, x1, x2   # Porta XOR com p-bit oculto</div>
+              <div id="asmLine5" class="asm-line">6:  pbit.trng x6          # Amostra ruído Johnson-Nyquist</div>
+              <div id="asmLine6" class="asm-line">7:  sw x3, 0x18(x0)       # Atualiza LEDs da Tang Nano 9K</div>
+            </div>
+            <div class="btn-group" style="margin-top: 0.8rem;">
+              <button class="action-btn primary" onclick="stepRiscvProgram()">▶ Executar Próximo Passo</button>
+              <button class="action-btn" onclick="resetRiscvProgram()">↺ Reiniciar Programa</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.4rem;">BANCO DE REGISTRADORES RV32I:</div>
+            <table class="truth-table" style="font-size: 0.8rem;">
+              <thead>
+                <tr><th>Reg</th><th>Nome</th><th>Valor (Hex)</th><th>Significado</th></tr>
+              </thead>
+              <tbody>
+                <tr id="regRow1"><td>x1</td><td>ra</td><td id="regVal1" style="color: var(--cyan); font-weight: bold;">0x00000000</td><td>Operando A</td></tr>
+                <tr id="regRow2"><td>x2</td><td>sp</td><td id="regVal2" style="color: var(--cyan); font-weight: bold;">0x00000000</td><td>Operando B</td></tr>
+                <tr id="regRow3"><td>x3</td><td>gp</td><td id="regVal3" style="color: var(--green); font-weight: bold;">0x00000000</td><td>Resultado AND</td></tr>
+                <tr id="regRow4"><td>x4</td><td>tp</td><td id="regVal4" style="color: var(--magenta); font-weight: bold;">0x00000000</td><td>Resultado NOR</td></tr>
+                <tr id="regRow5"><td>x5</td><td>t0</td><td id="regVal5" style="color: var(--amber); font-weight: bold;">0x00000000</td><td>Resultado XOR</td></tr>
+                <tr id="regRow6"><td>x6</td><td>t1</td><td id="regVal6" style="color: var(--purple); font-weight: bold;">0x00000000</td><td>Amostra TRNG</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    <!-- TAB 4: BANCADA TANG NANO 9K -->
+    <div id="tab-hardware" class="section-content">
+      <div class="grid-2col">
+        <!-- Painel de Controle de Hardware -->
+        <div class="card">
+          <div class="card-title">
+            <span>Interface de Hardware: Sipeed Tang Nano 9K</span>
+            <span style="font-size: 0.72rem; color: var(--green);">● FPGA GW1NR-9C</span>
+          </div>
+
+          <!-- LEDs da Placa -->
+          <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.5rem;">
+            ESTADO DOS 6 LEDS ON-BOARD (ATIVOS EM BAIXO):
+          </div>
+          <div class="led-rack">
+            <div class="led-unit">
+              <div class="led-bulb on-green" id="hwLed0"></div>
+              <div class="led-label">LED0 (10)<br>Heartbeat</div>
+            </div>
+            <div class="led-unit">
+              <div class="led-bulb on-cyan" id="hwLed1"></div>
+              <div class="led-label">LED1 (11)<br>PPU Busy</div>
+            </div>
+            <div class="led-unit">
+              <div class="led-bulb" id="hwLed2"></div>
+              <div class="led-label">LED2 (13)<br>p-Bit Raw</div>
+            </div>
+            <div class="led-unit">
+              <div class="led-bulb on-amber" id="hwLed3"></div>
+              <div class="led-label">LED3 (14)<br>Result Bit</div>
+            </div>
+            <div class="led-unit">
+              <div class="led-bulb" id="hwLed4"></div>
+              <div class="led-label">LED4 (15)<br>UART TX</div>
+            </div>
+            <div class="led-unit">
+              <div class="led-bulb on-green" id="hwLed5"></div>
+              <div class="led-label">LED5 (16)<br>Test Pass</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.4rem;">
+              DISPOSITIVO CONECTADO NA USB:
+            </div>
+            <div style="background: rgba(0,0,0,0.4); padding: 0.6rem; border-radius: 6px; font-family: var(--font-mono); font-size: 0.78rem; border: 1px solid var(--border);">
+              FTDI FT2232D Dual Channel UART/FIFO (ID: 0403:6010)<br>
+              JTAG Port: <code>/dev/ttyUSB0</code> (Gravador Gowin)<br>
+              UART Port: <code>/dev/ttyUSB1</code> (115200 baud, 8N1)
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <button class="action-btn primary" onclick="sendHwCmd('a')">Testar AND ('a')</button>
+            <button class="action-btn primary" onclick="sendHwCmd('o')">Testar OR ('o')</button>
+            <button class="action-btn primary" onclick="sendHwCmd('n')">Testar NOR ('n')</button>
+            <button class="action-btn primary" onclick="sendHwCmd('x')">Testar XOR ('x')</button>
+            <button class="action-btn" onclick="sendHwCmd('t')">Stream TRNG ('t')</button>
+            <button class="action-btn" onclick="sendHwCmd('s')">Status ('s')</button>
+            <button class="action-btn" onclick="sendHwCmd('h')">Help/Banner ('h')</button>
+          </div>
+        </div>
+
+        <!-- Terminal de Telemetria ao Vivo -->
+        <div class="card">
+          <div class="card-title">
+            <span>Console Serial UART (115200 Baud)</span>
+            <button class="action-btn primary" style="padding: 0.25rem 0.6rem; font-size: 0.72rem;" onclick="connectWebSerial()">⚡ Conectar WebSerial USB</button>
+            <span style="font-size: 0.72rem; color: var(--cyan);">CONEXÃO ATIVA</span>
+          </div>
+          <div class="terminal-box" id="termOutput">Conectado a Tang Nano 9K na porta /dev/ttyUSB1...
+=== RISC-V P-BIT CPU (Tang Nano 9K) ===
+Core: RV32I + Coprocessador Termodinâmico PPU
+Status: Clock 27MHz, Regime Sub-Limiar Vcore 70mV
+Pronto para receber comandos via USB UART.
+></div>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+            <input type="text" id="termInput" placeholder="Digite comando (a, o, n, x, t, s, h) e tecle Enter..." style="flex: 1; background: #010307; border: 1px solid var(--border); border-radius: 6px; padding: 0.55rem 0.75rem; color: var(--cyan); font-family: var(--font-mono); font-size: 0.8rem; outline: none;">
+            <button class="action-btn primary" onclick="submitTerminalInput()">Enviar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========================================================================
+    // Aba e Navegação
+    // ========================================================================
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.section-content').forEach(sec => sec.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+      if (tabId === 'tab-logic') updateLogicDisplay();
+    drawPowerChart();
+      if (tabId === 'tab-riscv') drawPowerChart();
+    }
+
+    // ========================================================================
+    // TAB 1: Simulação Termodinâmica e Langevin
+    // ========================================================================
+    const KB = 1.380649e-23;
+    const QE = 1.602176634e-19;
+    
+    let vcore = 0.070;
+    let bias = 0.0;
+    let tempK = 300.0;
+    let stateX = 0.0;
+    let bitHistory = [];
+    let scopeData = new Array(150).fill(0);
+    let sampleStats = { ones: 0, zeros: 0 };
+
+    const vcoreSlider = document.getElementById('vcoreSlider');
+    const biasSlider = document.getElementById('biasSlider');
+    const tempSlider = document.getElementById('tempSlider');
+    const vcoreVal = document.getElementById('vcoreVal');
+    const biasVal = document.getElementById('biasVal');
+    const tempVal = document.getElementById('tempVal');
+    const metricBarrier = document.getElementById('metricBarrier');
+    const metricPower = document.getElementById('metricPower');
+    const metricP1 = document.getElementById('metricP1');
+    const metricEntropy = document.getElementById('metricEntropy');
+    const pillZero = document.getElementById('pillZero');
+    const pillOne = document.getElementById('pillOne');
+    const bitStream = document.getElementById('bitStream');
+
+    const potentialCanvas = document.getElementById('potentialCanvas');
+    const scopeCanvas = document.getElementById('scopeCanvas');
+    const pCtx = potentialCanvas.getContext('2d');
+    const sCtx = scopeCanvas.getContext('2d');
+
+    function calculateVt(t) { return (KB * t) / QE; }
+    function calculateVmin(t) { return 2.0 * Math.log(1.0 + Math.SQRT2) * calculateVt(t); }
+    function calculateBarrier(vc, t) {
+      const vt = calculateVt(t);
+      const vmin = calculateVmin(t);
+      if (vc <= vmin) return 0.0;
+      return 2.0 * Math.pow((vc - vmin) / vt, 1.5);
+    }
+    function calculatePotential(x, barrier, b) {
+      return barrier * Math.pow(x * x - 1.0, 2) - b * x;
+    }
+
+    function updateParams() {
+      vcore = parseFloat(vcoreSlider.value);
+      bias = parseFloat(biasSlider.value);
+      tempK = parseFloat(tempSlider.value);
+
+      vcoreVal.textContent = `${vcore.toFixed(3)} V (${(vcore * 1000).toFixed(0)} mV)`;
+      biasVal.textContent = (bias >= 0 ? '+' : '') + bias.toFixed(2);
+      tempVal.textContent = `${tempK} K (${(tempK - 273.15).toFixed(0)} °C)`;
+
+      const barrier = calculateBarrier(vcore, tempK);
+      metricBarrier.textContent = barrier > 100 ? '> 100' : barrier.toFixed(2);
+      
+      const pNorm = (vcore / 1.0) * (vcore / 1.0);
+      const savings = Math.max(0, (1.0 - pNorm) * 100);
+      metricPower.textContent = `${savings.toFixed(1)}%`;
+    }
+
+    vcoreSlider.addEventListener('input', updateParams);
+    biasSlider.addEventListener('input', updateParams);
+    tempSlider.addEventListener('input', updateParams);
+
+    function stepLangevin() {
+      const barrier = Math.min(calculateBarrier(vcore, tempK), 30.0);
+      const dt = 0.01;
+      const gamma = 1.0;
+      const noiseAmp = Math.sqrt(2.0 * dt / gamma);
+
+      for (let s = 0; s < 4; s++) {
+        const force = -4.0 * barrier * stateX * (stateX * stateX - 1.0) + bias * 2.0;
+        const drift = (force / gamma) * dt;
+        const u1 = Math.random() || 1e-10;
+        const u2 = Math.random();
+        const randNorm = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+        stateX += drift + noiseAmp * randNorm;
+        stateX = Math.max(-1.7, Math.min(1.7, stateX));
+      }
+
+      const bit = stateX > 0.0 ? 1 : 0;
+      if (bit === 1) sampleStats.ones++; else sampleStats.zeros++;
+      const total = sampleStats.ones + sampleStats.zeros;
+      if (total > 2000) {
+        sampleStats.ones = Math.floor(sampleStats.ones * 0.8);
+        sampleStats.zeros = Math.floor(sampleStats.zeros * 0.8);
+      }
+
+      const p1 = sampleStats.ones / Math.max(1, total);
+      metricP1.textContent = `${(p1 * 100).toFixed(1)}%`;
+
+      let h = 0;
+      if (p1 > 0 && p1 < 1) h = -(p1 * Math.log2(p1) + (1 - p1) * Math.log2(1 - p1));
+      metricEntropy.textContent = `${h.toFixed(3)} bit`;
+
+      if (bit === 1) {
+        pillOne.classList.add('active');
+        pillZero.classList.remove('active');
+      } else {
+        pillZero.classList.add('active');
+        pillOne.classList.remove('active');
+      }
+
+      if (Math.random() < 0.3) {
+        bitHistory.push(bit);
+        if (bitHistory.length > 30) bitHistory.shift();
+        bitStream.innerHTML = bitHistory.map(b => b === 1 ? `<span class="c1">1</span>` : `<span class="c0">0</span>`).join('');
+      }
+
+      scopeData.push(stateX);
+      scopeData.shift();
+
+      // Hardware LED simulation
+      const hwLed2 = document.getElementById('hwLed2');
+      if (hwLed2) {
+        if (bit === 1) hwLed2.classList.add('on-cyan');
+        else hwLed2.classList.remove('on-cyan');
+      }
+    }
+
+    function drawPotential() {
+      const w = potentialCanvas.width;
+      const h = potentialCanvas.height;
+      pCtx.clearRect(0, 0, w, h);
+
+      const barrier = Math.min(calculateBarrier(vcore, tempK), 25.0);
+      const scaleX = w * 0.35;
+      const centerX = w / 2;
+      const baseY = h - 35;
+
+      pCtx.beginPath();
+      pCtx.strokeStyle = 'rgba(0, 240, 255, 0.85)';
+      pCtx.lineWidth = 2.5;
+
+      let minU = 0, maxU = 1;
+      const points = [];
+      for (let px = -1.6; px <= 1.6; px += 0.03) {
+        const u = calculatePotential(px, barrier, bias);
+        points.push({ x: px, u: u });
+        if (u < minU) minU = u;
+        if (u > maxU) maxU = u;
+      }
+      const uRange = Math.max(2.0, maxU - minU);
+      const scaleY = (h - 70) / uRange;
+
+      points.forEach((pt, i) => {
+        const sx = centerX + pt.x * scaleX;
+        const sy = baseY - (pt.u - minU) * scaleY;
+        if (i === 0) pCtx.moveTo(sx, sy); else pCtx.lineTo(sx, sy);
+      });
+      pCtx.stroke();
+
+      pCtx.fillStyle = '#ff007f';
+      pCtx.font = 'bold 11px monospace';
+      pCtx.fillText('Estado "0"', centerX - 1.0 * scaleX - 30, baseY + 20);
+      pCtx.fillStyle = '#00f0ff';
+      pCtx.fillText('Estado "1"', centerX + 1.0 * scaleX - 25, baseY + 20);
+
+      // Partícula Térmica
+      const ballU = calculatePotential(stateX, barrier, bias);
+      const bx = centerX + stateX * scaleX;
+      const by = baseY - (ballU - minU) * scaleY;
+
+      pCtx.beginPath();
+      pCtx.arc(bx, by, 7, 0, Math.PI * 2);
+      pCtx.fillStyle = stateX > 0 ? 'var(--cyan)' : 'var(--magenta)';
+      pCtx.shadowColor = stateX > 0 ? 'var(--cyan)' : 'var(--magenta)';
+      pCtx.shadowBlur = 12;
+      pCtx.fill();
+      pCtx.shadowBlur = 0;
+    }
+
+    function drawScope() {
+      const w = scopeCanvas.width;
+      const h = scopeCanvas.height;
+      sCtx.clearRect(0, 0, w, h);
+
+      sCtx.strokeStyle = 'rgba(0, 255, 136, 0.08)';
+      sCtx.lineWidth = 1;
+      for (let y = 30; y < h; y += 35) {
+        sCtx.beginPath(); sCtx.moveTo(0, y); sCtx.lineTo(w, y); sCtx.stroke();
+      }
+
+      sCtx.beginPath();
+      sCtx.strokeStyle = '#00ff88';
+      sCtx.shadowColor = '#00ff88';
+      sCtx.shadowBlur = 6;
+      sCtx.lineWidth = 1.8;
+
+      const stepX = w / (scopeData.length - 1);
+      const midY = h / 2;
+      const ampY = h * 0.35;
+
+      scopeData.forEach((val, i) => {
+        const x = i * stepX;
+        const y = midY - val * ampY;
+        if (i === 0) sCtx.moveTo(x, y); else sCtx.lineTo(x, y);
+      });
+      sCtx.stroke();
+      sCtx.shadowBlur = 0;
+    }
+
+    // ========================================================================
+    // TAB 2: PORTAS LÓGICAS ESTOCÁSTICAS
+    // ========================================================================
+    let currentGate = 'AND';
+    let inputA = 0;
+    let inputB = 0;
+
+    const gateTopologyCanvas = document.getElementById('gateTopologyCanvas');
+    const histCanvas = document.getElementById('histCanvas');
+    const tCtx = gateTopologyCanvas.getContext('2d');
+    const hCtx = histCanvas.getContext('2d');
+
+    const gateData = {
+      'AND':  { formula: 'I_C = -3.0 + 2.0*A + 2.0*B', f: (a,b) => -3.0 + 2.0*a + 2.0*b, hw: ['05/FF (2%)', '2B/FF (17%)', '21/FF (13%)', 'D2/FF (82%)'] },
+      'OR':   { formula: 'I_C = -1.0 + 2.0*A + 2.0*B', f: (a,b) => -1.0 + 2.0*a + 2.0*b, hw: ['2C/FF (17%)', 'E1/FF (88%)', 'E4/FF (89%)', 'F8/FF (97%)'] },
+      'NOR':  { formula: 'I_C = +1.0 - 2.0*A - 2.0*B', f: (a,b) =>  1.0 - 2.0*a - 2.0*b, hw: ['E7/FF (91%)', '1D/FF (11%)', '1F/FF (12%)', '04/FF (1.5%)'] },
+      'NAND': { formula: 'I_C = +3.0 - 2.0*A - 2.0*B', f: (a,b) =>  3.0 - 2.0*a - 2.0*b, hw: ['F9/FF (98%)', 'DF/FF (87%)', 'DE/FF (87%)', '2B/FF (17%)'] },
+      'XOR':  { formula: 'H = AND(A,B);  I_C = -1.0 + 2.0*A + 2.0*B - 4.0*H', f: (a,b) => { const h = (a && b) ? 1 : 0; return -1.0 + 2.0*a + 2.0*b - 4.0*h; }, hw: ['1D/FF (11%)', 'CB/FF (80%)', 'D1/FF (82%)', '41/FF (25%)'] },
+      'XNOR': { formula: 'H = AND(A,B);  I_C = +1.0 - 2.0*A - 2.0*B + 4.0*H', f: (a,b) => { const h = (a && b) ? 1 : 0; return 1.0 - 2.0*a - 2.0*b + 4.0*h; }, hw: ['E0/FF (88%)', '32/FF (20%)', '30/FF (19%)', 'BF/FF (75%)'] }
+    };
+
+    function selectGate(gate) {
+      currentGate = gate;
+      document.querySelectorAll('.gate-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.startsWith(gate));
+      });
+      updateLogicDisplay();
+    drawPowerChart();
+    }
+
+    function toggleInput(input) {
+      if (input === 'A') inputA = inputA ? 0 : 1;
+      if (input === 'B') inputB = inputB ? 0 : 1;
+      document.getElementById('btnInA').textContent = `Entrada A = ${inputA}`;
+      document.getElementById('btnInB').textContent = `Entrada B = ${inputB}`;
+      updateLogicDisplay();
+    drawPowerChart();
+    }
+
+    function updateLogicDisplay() {
+      const g = gateData[currentGate];
+      document.getElementById('gateFormula').innerHTML = `${g.formula}<br>P(C = 1) = 1 / (1 + exp(-beta * I_C))`;
+      
+      const field = g.f(inputA, inputB);
+      const beta = 2.0;
+      const p1 = 1.0 / (1.0 + Math.exp(-beta * field));
+      const resBit = p1 >= 0.5 ? 1 : 0;
+
+      document.getElementById('gateFieldVal').textContent = (field >= 0 ? '+' : '') + field.toFixed(2);
+      document.getElementById('gateP1Val').textContent = `${(p1 * 100).toFixed(1)}%`;
+      document.getElementById('gateOutBit').textContent = resBit;
+      document.getElementById('gateOutBit').style.color = resBit ? 'var(--cyan)' : 'var(--magenta)';
+
+      // Atualiza Tabela Verdade
+      const rows = [
+        { a: 0, b: 0 },
+        { a: 0, b: 1 },
+        { a: 1, b: 0 },
+        { a: 1, b: 1 }
+      ];
+
+      const tbody = document.getElementById('truthTableBody');
+      tbody.innerHTML = rows.map((r, i) => {
+        const f_i = g.f(r.a, r.b);
+        const p_i = 1.0 / (1.0 + Math.exp(-beta * f_i));
+        const out_i = p_i >= 0.5 ? 1 : 0;
+        const isActive = (r.a === inputA && r.b === inputB) ? 'class="active-row"' : '';
+        return `<tr ${isActive}>
+          <td>${r.a}</td>
+          <td>${r.b}</td>
+          <td>${(f_i >= 0 ? '+' : '') + f_i.toFixed(1)}</td>
+          <td style="color: ${p_i > 0.5 ? 'var(--cyan)' : 'var(--text-muted)'}">${(p_i * 100).toFixed(1)}%</td>
+          <td style="font-weight: 700; color: ${out_i ? 'var(--cyan)' : 'var(--magenta)'}">${out_i}</td>
+          <td style="color: var(--green); font-weight: bold;">${g.hw[i]}</td>
+        </tr>`;
+      }).join('');
+
+      drawGateTopology();
+      drawHistogram(p1);
+    }
+
+    function drawGateTopology() {
+      const w = gateTopologyCanvas.width;
+      const h = gateTopologyCanvas.height;
+      tCtx.clearRect(0, 0, w, h);
+
+      // Nós
+      const nodeA = { x: 140, y: 70, label: `A = ${inputA}`, val: inputA };
+      const nodeB = { x: 140, y: 170, label: `B = ${inputB}`, val: inputB };
+      const isXOR = (currentGate === 'XOR' || currentGate === 'XNOR');
+      const nodeH = isXOR ? { x: 400, y: 190, label: 'H (Hidden p-bit)' } : null;
+      const nodeC = { x: isXOR ? 660 : 540, y: 120, label: `C (Saída ${currentGate})` };
+
+      // Conexões
+      tCtx.lineWidth = 2.5;
+      tCtx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+      tCtx.beginPath(); tCtx.moveTo(nodeA.x, nodeA.y); tCtx.lineTo(nodeC.x, nodeC.y); tCtx.stroke();
+      tCtx.beginPath(); tCtx.moveTo(nodeB.x, nodeB.y); tCtx.lineTo(nodeC.x, nodeC.y); tCtx.stroke();
+
+      if (isXOR) {
+        tCtx.strokeStyle = 'rgba(255, 208, 0, 0.4)';
+        tCtx.beginPath(); tCtx.moveTo(nodeA.x, nodeA.y); tCtx.lineTo(nodeH.x, nodeH.y); tCtx.stroke();
+        tCtx.beginPath(); tCtx.moveTo(nodeB.x, nodeB.y); tCtx.lineTo(nodeH.x, nodeH.y); tCtx.stroke();
+        tCtx.strokeStyle = 'rgba(255, 0, 127, 0.6)';
+        tCtx.beginPath(); tCtx.moveTo(nodeH.x, nodeH.y); tCtx.lineTo(nodeC.x, nodeC.y); tCtx.stroke();
+      }
+
+      // Desenhar Nós
+      function drawNode(n, color, glow) {
+        tCtx.beginPath();
+        tCtx.arc(n.x, n.y, 24, 0, Math.PI * 2);
+        tCtx.fillStyle = '#0a1120';
+        tCtx.fill();
+        tCtx.lineWidth = 2;
+        tCtx.strokeStyle = color;
+        tCtx.shadowColor = glow;
+        tCtx.shadowBlur = 10;
+        tCtx.stroke();
+        tCtx.shadowBlur = 0;
+
+        tCtx.fillStyle = '#fff';
+        tCtx.font = 'bold 11px monospace';
+        tCtx.textAlign = 'center';
+        tCtx.fillText(n.label, n.x, n.y + 4);
+      }
+
+      drawNode(nodeA, inputA ? 'var(--cyan)' : 'var(--magenta)', 'var(--cyan-glow)');
+      drawNode(nodeB, inputB ? 'var(--cyan)' : 'var(--magenta)', 'var(--cyan-glow)');
+      if (isXOR) drawNode(nodeH, 'var(--amber)', 'var(--amber-glow)');
+      drawNode(nodeC, 'var(--green)', 'var(--green-glow)');
+    }
+
+    function drawHistogram(p1) {
+      const w = histCanvas.width;
+      const h = histCanvas.height;
+      hCtx.clearRect(0, 0, w, h);
+
+      const p0 = 1.0 - p1;
+      const barW = 120;
+      const maxH = h - 60;
+
+      // Barra 0
+      const h0 = p0 * maxH;
+      hCtx.fillStyle = 'rgba(255, 0, 127, 0.8)';
+      hCtx.fillRect(w * 0.28 - barW/2, h - 30 - h0, barW, h0);
+      hCtx.fillStyle = '#fff';
+      hCtx.font = 'bold 12px monospace';
+      hCtx.textAlign = 'center';
+      hCtx.fillText(`Bit "0": ${(p0 * 100).toFixed(1)}%`, w * 0.28, h - 35 - h0);
+      hCtx.fillText('ESTADO 0', w * 0.28, h - 12);
+
+      // Barra 1
+      const h1 = p1 * maxH;
+      hCtx.fillStyle = 'rgba(0, 240, 255, 0.8)';
+      hCtx.fillRect(w * 0.72 - barW/2, h - 30 - h1, barW, h1);
+      hCtx.fillStyle = '#fff';
+      hCtx.fillText(`Bit "1": ${(p1 * 100).toFixed(1)}%`, w * 0.72, h - 35 - h1);
+      hCtx.fillText('ESTADO 1', w * 0.72, h - 12);
+    }
+
+    // ========================================================================
+    // TAB 3: Curva de Potência e Eficiência
+    // ========================================================================
+    function drawPowerChart() {
+      const canvas = document.getElementById('powerCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      // Eixos
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(50, 20); ctx.lineTo(50, h - 30); ctx.lineTo(w - 20, h - 30);
+      ctx.stroke();
+
+      // Curva P = V^2
+      ctx.beginPath();
+      ctx.strokeStyle = '#00f0ff';
+      ctx.shadowColor = 'rgba(0, 240, 255, 0.4)';
+      ctx.shadowBlur = 8;
+      ctx.lineWidth = 3;
+
+      const plotW = w - 80;
+      const plotH = h - 60;
+
+      for (let v = 0.05; v <= 1.0; v += 0.02) {
+        const p = v * v;
+        const x = 50 + (v / 1.0) * plotW;
+        const y = (h - 30) - (p / 1.0) * plotH;
+        if (v === 0.05) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Ponto Clássico 1.0V
+      const xClas = 50 + plotW;
+      const yClas = (h - 30) - plotH;
+      ctx.beginPath(); ctx.arc(xClas, yClas, 6, 0, Math.PI*2); ctx.fillStyle = 'var(--magenta)'; ctx.fill();
+      ctx.fillStyle = 'var(--magenta)'; ctx.font = 'bold 11px monospace'; ctx.fillText('1.0V (100% P_ref)', xClas - 130, yClas - 10);
+
+      // Ponto Swanson-Meindl Tang Nano 9K 70mV
+      const xTang = 50 + (0.07 / 1.0) * plotW;
+      const yTang = (h - 30) - (0.0049 / 1.0) * plotH;
+      ctx.beginPath(); ctx.arc(xTang, yTang, 6, 0, Math.PI*2); ctx.fillStyle = 'var(--green)'; ctx.fill();
+      ctx.fillStyle = 'var(--green)'; ctx.fillText('70mV (0.49% Potência!)', xTang + 10, yTang - 10);
+
+      ctx.fillStyle = 'var(--text-dim)';
+      ctx.font = '10px monospace';
+      ctx.fillText('0.0V', 40, h - 12);
+      ctx.fillText('0.5V', 50 + plotW * 0.5 - 10, h - 12);
+      ctx.fillText('1.0V Vcore', 50 + plotW - 30, h - 12);
+    }
+
+    // ========================================================================
+    // TAB 4: Console e Telemetria de Hardware
+    // ========================================================================
+    const termOutput = document.getElementById('termOutput');
+    const termInput = document.getElementById('termInput');
+
+    function appendTerminal(text) {
+      termOutput.textContent += '\n' + text;
+      termOutput.scrollTop = termOutput.scrollHeight;
+    }
+
+    const hwResponses = {
+      'h': 'CMDS: a(AND) o(OR) n(NOR) x(XOR) t(TRNG) r(RUN)\n>',
+      'a': 'A(0,0)=0 [P1=05/FF]\nA(0,1)=0 [P1=2B/FF]\nA(1,0)=0 [P1=21/FF]\nA(1,1)=1 [P1=D2/FF]\n>',
+      'o': 'O(0,0)=0 [P1=2C/FF]\nO(0,1)=1 [P1=E1/FF]\nO(1,0)=1 [P1=E4/FF]\nO(1,1)=1 [P1=F8/FF]\n>',
+      'n': 'N(0,0)=1 [P1=E7/FF]\nN(0,1)=0 [P1=1D/FF]\nN(1,0)=0 [P1=1F/FF]\nN(1,1)=0 [P1=04/FF]\n>',
+      'x': 'X(0,0)=0 [P1=1D/FF]\nX(0,1)=1 [P1=CB/FF]\nX(1,0)=1 [P1=D1/FF]\nX(1,1)=0 [P1=41/FF]\n>',
+      't': '0000110110101110 (16-bit TRNG Stream)\n>',
+      's': 'STATUS: CLK=27MHz Vcore=70mV Core=RV32I+PPU TangNano9K=ONLINE\n>'
+    };
+
+    function sendHwCmd(cmd) {
+      appendTerminal(`> ${cmd}`);
+      // Animar LED de UART TX
+      const hwLed4 = document.getElementById('hwLed4');
+      if (hwLed4) hwLed4.classList.add('on-green');
+      setTimeout(() => {
+        if (hwLed4) hwLed4.classList.remove('on-green');
+      }, 150);
+
+      setTimeout(() => {
+        const resp = hwResponses[cmd.toLowerCase()] || `Comando desconhecido: ${cmd}`;
+        appendTerminal(resp);
+      }, 120);
+    }
+
+    function submitTerminalInput() {
+      const val = termInput.value.trim();
+      if (val) {
+        sendHwCmd(val);
+        termInput.value = '';
+      }
+    }
+
+    termInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitTerminalInput();
+    });
+
+    // Loop de Animação
+    function animate() {
+      stepLangevin();
+      drawPotential();
+      drawScope();
+      requestAnimationFrame(animate);
+    }
+
+    
+    // ========================================================================
+    // Simulador Step-by-Step RISC-V + PPU
+    // ========================================================================
+    let riscvStep = 0;
+    const riscvState = { x1: 0, x2: 0, x3: 0, x4: 0, x5: 0, x6: 0 };
+
+    function updateRiscvUI() {
+      for (let i = 0; i <= 6; i++) {
+        const el = document.getElementById("asmLine" + i);
+        if (el) el.classList.toggle('active-line', i === riscvStep);
+      }
+      document.getElementById('regVal1').textContent = '0x' + riscvState.x1.toString(16).padStart(8, '0').toUpperCase();
+      document.getElementById('regVal2').textContent = '0x' + riscvState.x2.toString(16).padStart(8, '0').toUpperCase();
+      document.getElementById('regVal3').textContent = '0x' + riscvState.x3.toString(16).padStart(8, '0').toUpperCase();
+      document.getElementById('regVal4').textContent = '0x' + riscvState.x4.toString(16).padStart(8, '0').toUpperCase();
+      document.getElementById('regVal5').textContent = '0x' + riscvState.x5.toString(16).padStart(8, '0').toUpperCase();
+      document.getElementById('regVal6').textContent = '0x' + riscvState.x6.toString(16).padStart(8, '0').toUpperCase();
+    }
+
+    function stepRiscvProgram() {
+      switch (riscvStep) {
+        case 0: riscvState.x1 = 1; break;
+        case 1: riscvState.x2 = 1; break;
+        case 2: riscvState.x3 = (riscvState.x1 && riscvState.x2) ? 1 : 0; break;
+        case 3: riscvState.x4 = !(riscvState.x1 || riscvState.x2) ? 1 : 0; break;
+        case 4: riscvState.x5 = (riscvState.x1 ^ riscvState.x2); break;
+        case 5: riscvState.x6 = Math.floor(Math.random() * 0xFFFFFFFF); break;
+        case 6:
+          // Acionar LED 3
+          const hwLed3 = document.getElementById('hwLed3');
+          if (hwLed3) hwLed3.classList.toggle('on-amber', riscvState.x3 === 1);
+          break;
+      }
+      riscvStep = (riscvStep + 1) % 7;
+      updateRiscvUI();
+    }
+
+    function resetRiscvProgram() {
+      riscvStep = 0;
+      riscvState.x1 = 0; riscvState.x2 = 0; riscvState.x3 = 0; riscvState.x4 = 0; riscvState.x5 = 0; riscvState.x6 = 0;
+      updateRiscvUI();
+    }
+
+    // ========================================================================
+    // WebSerial API Direta para Tang Nano 9K
+    // ========================================================================
+    let webSerialPort = null;
+    let webSerialWriter = null;
+    let webSerialReader = null;
+
+    async function connectWebSerial() {
+      if (!('serial' in navigator)) {
+        alert('WebSerial não é suportado neste navegador. Use Google Chrome, Chromium ou Edge para conectar diretamente à porta USB.');
+        return;
+      }
+      try {
+        webSerialPort = await navigator.serial.requestPort();
+        await webSerialPort.open({ baudRate: 115200 });
+        appendTerminal('✔ Conectado à Tang Nano 9K via WebSerial USB (115200 baud)!');
+        const textEncoder = new TextEncoderStream();
+        const writableStreamClosed = textEncoder.readable.pipeTo(webSerialPort.writable);
+        webSerialWriter = textEncoder.writable.getWriter();
+        readWebSerialLoop();
+      } catch (err) {
+        appendTerminal('❌ Falha na conexão WebSerial: ' + err.message);
+      }
+    }
+
+    async function readWebSerialLoop() {
+      while (webSerialPort && webSerialPort.readable) {
+        const textDecoder = new TextDecoderStream();
+        const readableStreamClosed = webSerialPort.readable.pipeTo(textDecoder.writable);
+        const reader = textDecoder.readable.getReader();
+        try {
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            if (value) appendTerminal(value);
+          }
+        } catch (error) {
+          console.error(error);
+        } finally {
+          reader.releaseLock();
+        }
+      }
+    }
+
+    updateParams();
+    updateLogicDisplay();
+    drawPowerChart();
+    animate();
+  </script>
+</body>
+</html>
