@@ -21,8 +21,10 @@ generation (TRNG) and ultra-low-power stochastic logic.
 ## NLnet Application
 
 - **Fund:** Restack (Open Internet Stack)
-- **Application code:** `2026-11-0ed`
+- **Application code:** `2026-11-0ee` (final)
+  - previous: `2026-11-0ed` (initial Restack submission)
 - **Website (Zenodo):** <https://zenodo.org/records/22716326>
+- **Repository (GitHub):** <https://github.com/testinhottt-ux/probabilistic-riscv-pbit>
 
 ## Repository Layout
 
